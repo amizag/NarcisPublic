@@ -1,0 +1,219 @@
+
+#include <VarSpeedServo.h> 
+#include <Wire.h>
+
+
+// variables to hold the parsed data  InitAngle1 = 9;  InitAngle2 = 15;   InitAngle3 = 17; 
+
+int InitServoSpeed = 100;
+
+int pos1= 20;
+int pos2= 14;
+int pos3= 12;
+
+int ActualBeta = 0 ;
+int ActualGama = 0 ;
+
+VarSpeedServo myservo1;  // create servo object to control a servo
+VarSpeedServo myservo2;  // create servo object to control a servo
+VarSpeedServo myservo3;  // create servo object to control a servo
+
+// i2c
+int data [4];
+int x = 0;
+int BetaPi;
+int number;
+int deltaBeta = 0;
+int deltaGama = 0;
+int AngleIncrement = 1;
+int Direction = 0;
+bool NewI2C = false;
+int AbsPositionBeta = 0;
+int AbsPositionGama = 0;
+int ActualPositionBeta = 0;
+int ActualPositionGama = 0;
+
+//============
+
+void setup() {
+
+    Serial.begin(9600);
+    // Serial.println("This demo expects 3 pieces of data - text, an integer and a floating point value");
+    
+    myservo1.attach(9,500,1900);  // attaches the servo on pin 9 to the servo object
+    myservo2.attach(10,500,1900);  // attaches the servo on pin 9 to the servo object
+    myservo3.attach(11,500,1900);  // attaches the servo on pin 9 to the servo object
+
+    myservo1.write(pos1);
+    myservo2.write(pos2);
+    myservo3.write(pos3);
+
+    myservo1.wait(); // wait for movement to finish
+    myservo2.wait(); // wait for movement to finish
+    myservo3.wait(); // wait for movement to finish
+
+    delay(500);
+
+    // i2c
+    Wire.begin(0x08);                          
+    Wire.onReceive(receiveData);               //callback for i2c. Jump to void recieveData() function when pi sends data
+    delay(500);
+    
+}
+
+//============
+
+void loop() {
+
+
+      // delay(100);
+
+      if (NewI2C) {
+      AbsPositionBeta = ActualPositionBeta - deltaBeta; 
+      AbsPositionGama = ActualPositionGama - deltaGama; 
+      MoveServosFromPID(110, - AbsPositionBeta ,-AbsPositionGama,50);
+      ActualPositionBeta = AbsPositionBeta;
+      ActualPositionGama = AbsPositionGama;
+      NewI2C = false;
+      }
+
+
+      // Serial.print("ActualGama  ");
+      // Serial.println(ActualGama);
+      // Serial.print("number  ");
+      // Serial.println(number);
+
+
+      // if ( BetaMes > Setpoint1 - AngleBuffer and BetaMes < Setpoint1 + AngleBuffer )
+      //     {
+      //     BetaMes = Setpoint1;
+      //     }
+      // if ( GamaMes > Setpoint2 - AngleBuffer and GamaMes < Setpoint2 + AngleBuffer )
+      //     {
+      //     GamaMes = Setpoint2;
+      //     }
+
+
+    
+}
+
+//==============
+
+void MoveServosFromPID(int L, int Beta, int Gama, int ServoSpeed) {
+  
+  float R = 58.0; // servo arm length
+  float Hcst = 27.0; // The height constante. 27mm here
+
+  float MotorAngle1; //the angle that the servo should rotate to achieve the joint height
+  float MotorAngle2; //the angle that the servo should rotate to achieve the joint height
+  float MotorAngle3; //the angle that the servo should rotate to achieve the joint height
+
+  float InitAngle1 = 9;  // the angle that the servo arm makes with the horizon when the servo is at 0deg
+  float InitAngle2 = 15;  
+  float InitAngle3 = 17; 
+
+
+  // int L= 100;
+
+  float LOne;
+  float LTwo;
+  float LThree;
+  float LdifLR;
+  float LdifUD;
+  float W = 156.0; // The horizontal distance between the two L and R joint 
+  float X = 136.0; // The vertical distance between the upper and lower joints  
+
+  Beta = constrain(Beta, -20, 20);  
+  Gama = constrain(Gama, -20, 20);  
+  float BetaRad = Beta * 3.14 / 180.0;  
+  LdifLR = W * sin(BetaRad) / 2.0;
+  
+  float GamaRad = Gama * 3.14 / 180.0;  
+  LdifUD = X * sin(GamaRad) / 2.0;
+  
+  LOne = L - LdifUD; 
+  LTwo = L - LdifLR + LdifUD;
+  LThree = L + LdifLR + LdifUD;
+
+  // LOne   = constrain(LOne  , 20, 140);  
+  // LTwo   = constrain(LTwo  , 20, 140);  
+  // LThree = constrain(LThree, 20, 140);  
+
+  MotorAngle1 = 57.324 * asin((LOne-Hcst)/(2*R)) - InitAngle1;
+  MotorAngle2 = 57.324 * asin((LTwo-Hcst)/(2*R)) - InitAngle2;
+  MotorAngle3 = 57.324 * asin((LThree-Hcst)/(2*R)) - InitAngle3;  
+
+  // MotorAngle1 = constrain(MotorAngle1, 20, 60);
+  // MotorAngle2 = constrain(MotorAngle2, 14, 60);
+  // MotorAngle3 = constrain(MotorAngle3, 12, 60);
+
+  // myservo1.attach(9,500,1900);  // attaches the servo on pin 9 to the servo object
+  // myservo2.attach(10,500,1900);  // attaches the servo on pin 9 to the servo object
+  // myservo3.attach(11,500,1900);  // attaches the servo on pin 9 to the servo object
+  // delay(200);
+
+  // Serial.print("ang1  ");
+  // Serial.print(MotorAngle1);
+  // Serial.print("  ang2  ");
+  // Serial.print(MotorAngle2);
+  // Serial.print("  ang3  ");
+  // Serial.println(MotorAngle3);
+
+  myservo1.write(MotorAngle1, ServoSpeed, false);        // move to 180 degrees, use a speed of 30, wait until move is complete
+  myservo2.write(MotorAngle2, ServoSpeed, false);
+  myservo3.write(MotorAngle3, ServoSpeed, false);  
+
+  // myservo1.wait(); // wait for movement to finish
+  // myservo2.wait(); // wait for movement to finish
+  // myservo3.wait(); // wait for movement to finish
+  // // delay(200);
+
+  // myservo1.detach();
+  // myservo2.detach();
+  // myservo3.detach();    
+
+  // delay(200);
+
+}
+
+//==============
+
+void receiveData(int byteCount) { 
+
+   while(Wire.available()) {               //Wire.available() returns the number of bytes available for retrieval with Wire.read(). Or it returns TRUE for values >0.
+
+      Direction = Wire.read();
+      if (Direction == 0){deltaBeta = 0              ; deltaGama = 0              ;}
+      if (Direction == 1){deltaBeta = 0              ; deltaGama = AngleIncrement ;}
+      if (Direction == 2){deltaBeta = AngleIncrement ; deltaGama = AngleIncrement ;}
+      if (Direction == 3){deltaBeta = AngleIncrement ; deltaGama = 0              ;}
+      if (Direction == 4){deltaBeta = AngleIncrement ; deltaGama = -AngleIncrement;}
+      if (Direction == 5){deltaBeta = 0              ; deltaGama = -AngleIncrement;}
+      if (Direction == 6){deltaBeta = -AngleIncrement; deltaGama = -AngleIncrement;}
+      if (Direction == 7){deltaBeta = -AngleIncrement; deltaGama = 0              ;}
+      if (Direction == 8){deltaBeta = -AngleIncrement; deltaGama = AngleIncrement ;}
+
+      NewI2C = true;
+
+     }
+      // int LPi = data[0];
+      // BetaPi = data[1] - 100;
+      // int GamaPi = data[2] - 100;
+      // int SpeedPi = data[3];
+
+      // MoveServosFromPID(100,number,0,30);
+
+    //  Serial.println("----");
+    //  Serial.print(data[0]);
+    //  Serial.print("\t");
+    //  Serial.println(data[1]);
+    //  Serial.print("\t");
+    //  Serial.print(data[2]);
+    //  Serial.print("\t");
+    //  Serial.println(data[3]);
+    //  Serial.print("\t");
+    //  Serial.print("----");
+
+
+}
+
