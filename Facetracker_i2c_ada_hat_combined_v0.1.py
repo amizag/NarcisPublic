@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #Below we are importing functionality to our Code, OPEN-CV, Time, and Pimoroni Pan Tilt Hat Package of particular note.
 import cv2, sys, time, os
-from pantilthat import *
-import smbus
+# from pantilthat import *
+# import smbus
 import time
 from adafruit_servokit import ServoKit
 from varspeed import Vspeed
@@ -35,6 +35,8 @@ AbsPositionBeta = 0;
 AbsPositionGama = 0;
 ActualPositionBeta = 0;
 ActualPositionGama = 0;
+
+NoFaceCount = 0
 
 # Readjusts the pulsewidth for 0 and 180 for each motor
 kit.servo[0].set_pulse_width_range(500, 1900)
@@ -239,7 +241,14 @@ while True:
     # Do face detection to search for faces from these captures frames
     # cv2.CascadeClassifier.detectMultiScale(image[, scaleFactor[, minNeighbors[, flags[, minSize[, maxSize]]]]]) 
     faces = faceCascade.detectMultiScale(frame, 1.1, 3, 0, (10, 10))
-   
+    # print(faces.size)
+    if len(faces) == 0:
+        NoFaceCount = NoFaceCount + 1
+        print("No Face", NoFaceCount)
+        if NoFaceCount > 80:
+            Move_mirror_high(0, MaxArmHeight,   0,  0, 0.5)
+    else:
+        NoFaceCount = 0
     # Slower method (this gets used only if the slower HAAR method was uncommented above. 
     '''faces = faceCascade.detectMultiScale(
         gray,
