@@ -42,9 +42,9 @@ kit.servo[1].set_pulse_width_range(500, 1900)
 kit.servo[2].set_pulse_width_range(500, 1900)
 
 # Move the three servos to their innitial position
-kit.servo[0].angle = MIN0
-kit.servo[1].angle = MIN1
-kit.servo[2].angle = MIN2
+kit.servo[0].angle = MIN0+40
+kit.servo[1].angle = MIN1+40
+kit.servo[2].angle = MIN2+40
 
 # Give it time to move
 time.sleep(3)
