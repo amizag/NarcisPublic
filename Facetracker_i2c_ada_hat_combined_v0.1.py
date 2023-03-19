@@ -2,7 +2,7 @@
 #Below we are importing functionality to our Code, OPEN-CV, Time, and Pimoroni Pan Tilt Hat Package of particular note.
 import cv2, sys, time, os
 # from pantilthat import *
-# import smbus
+import smbus
 import time
 from adafruit_servokit import ServoKit
 from varspeed import Vspeed
@@ -176,16 +176,6 @@ def Move_mirror_high(mirrorNum, Height, Beta, Gama, Duration):
         
     # print(f'End of function call')
 
-
-# def writeNumber(a,b,c,d):
-#     bus.write_i2c_block_data(address, a, [b, c, d])
-#     return -1
-# 
-# def writeOneNumber(value):
-#     bus.write_byte(address, value)
-#     # bus.write_byte_data(address, 0, value)
-#     return -1
-
 # Load the BCM V4l2 driver for /dev/video0. This driver has been installed from earlier terminal commands. 
 #This is really just to ensure everything is as it should  be.
 os.system('sudo modprobe bcm2835-v4l2')
@@ -215,13 +205,6 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH,  400);
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 200);
 time.sleep(2)
 
-# Turn the camera to the Start position (the data that pan() and tilt() functions expect to see are any numbers between -90 to 90 degrees).
-# pan(cam_pan-90)
-# tilt(cam_tilt-90)
-# light_mode(WS2812)
-
-# lights(0,0,0,50)
-
 #Below we are creating an infinite loop, the system will run forever or until we manually tell it to stop (or use the "q" button on our keyboard)
 while True:
 
@@ -249,6 +232,7 @@ while True:
             Move_mirror_high(0, MaxArmHeight,   0,  0, 0.5)
     else:
         NoFaceCount = 0
+        print("Face Detected")
     # Slower method (this gets used only if the slower HAAR method was uncommented above. 
     '''faces = faceCascade.detectMultiScale(
         gray,
@@ -257,8 +241,6 @@ while True:
         minSize=(20, 20),
         flags=cv2.cv.CV_HAAR_SCALE_IMAGE | cv2.cv.CV_HAAR_FIND_BIGGEST_OBJECT | cv2.cv.CV_HAAR_DO_ROUGH_SEARCH
     )'''
-    
-    # lights(50 if len(faces) == 0 else 0, 50 if len(faces) > 0 else 0,0,50)
 
     #Below draws the rectangle onto the screen then determines how to move the camera module so that the face can always be in the centre of screen. 
 
@@ -321,63 +303,23 @@ while True:
         AbsPositionGama = ActualPositionGama - deltaGama;
         
         # MoveServosFromPID(110, - AbsPositionBeta ,-AbsPositionGama,50);
-        Move_mirror_high(0, MaxArmHeight,   - AbsPositionBeta,  -AbsPositionGama, 0.05)
+        Move_mirror_high(0, MaxArmHeight,   - AbsPositionBeta,  -AbsPositionGama, 0.01)
         
         ActualPositionBeta = AbsPositionBeta;
         ActualPositionGama = AbsPositionGama;
         
-#        Direction = Wire.read();
-#       if (Direction == 0){deltaBeta = 0              ; deltaGama = 0              ;}
-#       if (Direction == 1){deltaBeta = 0              ; deltaGama = AngleIncrement ;}
-#       if (Direction == 2){deltaBeta = AngleIncrement ; deltaGama = AngleIncrement ;}
-#       if (Direction == 3){deltaBeta = AngleIncrement ; deltaGama = 0              ;}
-#       if (Direction == 4){deltaBeta = AngleIncrement ; deltaGama = -AngleIncrement;}
-#       if (Direction == 5){deltaBeta = 0              ; deltaGama = -AngleIncrement;}
-#       if (Direction == 6){deltaBeta = -AngleIncrement; deltaGama = -AngleIncrement;}
-#       if (Direction == 7){deltaBeta = -AngleIncrement; deltaGama = 0              ;}
-#       if (Direction == 8){deltaBeta = -AngleIncrement; deltaGama = AngleIncrement ;}
-            
-        # print(Direction)
-        
-        # writeOneNumber(Direction)
-        # writeOneNumber(p)
-        # writeNumber(100,p,100,10)
-        time.sleep(0.1)                    #delay one second
-
-
-        # Correct relative to centre of image
-        # turn_x  = float(x - (FRAME_W/2))
-        # turn_y  = float(y - (FRAME_H/2))
-
-        # Convert to percentage offset
-        # turn_x  /= float(FRAME_W/2)
-        # turn_y  /= float(FRAME_H/2)
-
-        # Scale offset to degrees (that 2.5 value below acts like the Proportional factor in PID)
-        # turn_x   *= 2.5 # VFOV
-        # turn_y   *= 2.5 # HFOV
-        # cam_pan  += -turn_x
-        # cam_tilt += turn_y
-
-        # print(cam_pan-90, cam_tilt-90)
-
-        # Clamp Pan/Tilt to 0 to 180 degrees
-        # cam_pan = max(0,min(180,cam_pan))
-        # cam_tilt = max(0,min(180,cam_tilt))
-
-        # Update the servos
-        # pan(int(cam_pan-90))
-        # tilt(int(cam_tilt-90))
+        time.sleep(0.05)                    #delay one second
 
         break
     
     #Orientate the frame so you can see it.
-    # frame = cv2.resize(frame, (540,300))
+    
     frame = cv2.resize(frame, (400,200))
     frame = cv2.flip(frame, 1)
    
     # Display the video captured, with rectangles overlayed
-    # onto the Pi desktop 
+    # onto the Pi desktop
+    
     cv2.imshow('Video', frame)
 
     #If you type q at any point this will end the loop and thus end the code.
