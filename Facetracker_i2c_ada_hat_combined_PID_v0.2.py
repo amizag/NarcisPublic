@@ -305,8 +305,8 @@ while True:
         
         # Converts pixels to degrees, the usb camera has a 120 degrees angle
         # proprtionally devided to the 400 pixels of the image width
-        # since we can just send 0-255 via i2c, we will Center the angle
-        # around 100
+        ErrorDegBeta = int (1 * z * 120/400)
+        ErrorDegGama = int (1 * t * 120/200)
         
         if -CenterRange < z < CenterRange and -CenterRange < t < CenterRange:
             Direction = 0
@@ -344,13 +344,15 @@ while True:
             Direction = 8
             deltaBeta = -AngleIncrement
             deltaGama = AngleIncrement
-
+            
+        # the function moving the motors work in absolute positions, converting relative to absolue here
         AbsPositionBeta = ActualPositionBeta - deltaBeta; 
         AbsPositionGama = ActualPositionGama - deltaGama;
         
-        # MoveServosFromPID(110, - AbsPositionBeta ,-AbsPositionGama,50);
+        # Call the function that will move the motors
         Move_mirror_high(0, MaxArmHeight,   - AbsPositionBeta,  -AbsPositionGama, 0.01)
         
+        # setting the new Actual position
         ActualPositionBeta = AbsPositionBeta;
         ActualPositionGama = AbsPositionGama;
         
