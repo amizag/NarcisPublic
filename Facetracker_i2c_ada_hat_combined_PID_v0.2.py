@@ -7,6 +7,7 @@ import time
 from adafruit_servokit import ServoKit
 from varspeed import Vspeed
 import numpy as np
+from simple_pid import PID
 
 # no need for this now, using the adafruit library to talk to the hat now
 # bus = smbus.SMBus(1)
@@ -37,6 +38,12 @@ ActualPositionBeta = 0;
 ActualPositionGama = 0;
 
 NoFaceCount = 0
+
+## PID
+pid1 = PID(-0.4, -0.1, 0, setpoint=0)
+pid1.sample_time = 0.01  # Update every 0.01 seconds
+pid1.output_limits = (-20, 20)    # Output value will be between 0 and 10
+
 
 # Readjusts the pulsewidth for 0 and 180 for each motor
 kit.servo[0].set_pulse_width_range(500, 1900)
@@ -308,6 +315,8 @@ while True:
         ErrorDegBeta = int (1 * z * 120/400)
         ErrorDegGama = int (1 * t *  60/200)
         
+        DeltaBetaPID = pid1(ErrorDegBeta)
+        
         if -CenterRange < z < CenterRange and -CenterRange < t < CenterRange:
             Direction = 0
             deltaBeta = 0
@@ -350,7 +359,8 @@ while True:
         AbsPositionGama = ActualPositionGama - deltaGama;
         
         # Call the function that will move the motors
-        Move_mirror_high(0, MaxArmHeight,   - AbsPositionBeta,  -AbsPositionGama, 0.01)
+        # Move_mirror_high(0, MaxArmHeight,   - AbsPositionBeta,  -AbsPositionGama, 0.01)
+        Direct_Move_mirror_high(0, MaxArmHeight, DeltaBetaPID, 0)
         
         # setting the new Actual position
         ActualPositionBeta = AbsPositionBeta;
