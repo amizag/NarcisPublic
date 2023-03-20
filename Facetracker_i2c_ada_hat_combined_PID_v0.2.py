@@ -175,7 +175,53 @@ def Move_mirror_high(mirrorNum, Height, Beta, Gama, Duration):
             kit.servo[2].angle = position2
         
     # print(f'End of function call')
+    
+def Direct_Move_mirror_high(mirrorNum, Height, Beta, Gama):
+    # pass
+    R = 58; # servo arm length
+    Hcst = 27.0; # The height constante. 27mm here
+    Speed = 10
 
+    InitAngle0 = 9.0;  # the angle that the servo arm makes with the horizon when the servo is at 0deg
+    InitAngle1 = 15.0;  
+    InitAngle2 = 17.0;
+    
+    L = 100
+    
+    W = 156.0; # The horizontal distance between the two L and R joint 
+    X = 136.0; # The vertical distance between the upper and lower joints  
+
+    Beta = np.clip(Beta, -20, 20) 
+    Gama = np.clip(Gama, -20, 20)
+     
+    BetaRad = Beta * 3.14 / 180.0;  
+    LdifLR = W * np.sin(BetaRad) / 2.0; # the difference between left and right arms
+  
+    GamaRad = Gama * 3.14 / 180.0;  
+    LdifUD = X * np.sin(GamaRad) / 2.0; # the difference between Up and dowm arms
+  
+    LOne = L - LdifUD; 
+    LTwo = L - LdifLR + LdifUD;
+    LThree = L + LdifLR + LdifUD;
+    
+    highest = max(LOne,LTwo,LThree)
+    Dif = Height - highest
+    
+    LOne = LOne + Dif
+    LTwo = LTwo + Dif
+    LThree = LThree + Dif
+    
+    MotorAngle0 = 57.324 * np.arcsin((LOne-Hcst)/(2*R)) - InitAngle0;
+    MotorAngle1 = 57.324 * np.arcsin((LTwo-Hcst)/(2*R)) - InitAngle1;
+    MotorAngle2 = 57.324 * np.arcsin((LThree-Hcst)/(2*R)) - InitAngle2;
+    
+    kit.servo[0].angle = MotorAngle0
+    kit.servo[1].angle = MotorAngle1
+    kit.servo[2].angle = MotorAngle2
+
+        
+    # print(f'End of function call')
+    
 # Load the BCM V4l2 driver for /dev/video0. This driver has been installed from earlier terminal commands. 
 #This is really just to ensure everything is as it should  be.
 os.system('sudo modprobe bcm2835-v4l2')
