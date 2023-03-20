@@ -40,9 +40,12 @@ ActualPositionGama = 0;
 NoFaceCount = 0
 
 ## PID
-pid1 = PID(-0.4, -0.1, 0, setpoint=0)
+pid1 = PID(-0.1, -0.1, 0, setpoint=0)
+pid2 = PID(-0.1, -0.5, 0, setpoint=0)
 pid1.sample_time = 0.01  # Update every 0.01 seconds
+pid2.sample_time = 0.2  # Update every 0.01 seconds
 pid1.output_limits = (-20, 20)    # Output value will be between 0 and 10
+pid2.output_limits = (-20, 20)    # Output value will be between 0 and 10
 
 
 # Readjusts the pulsewidth for 0 and 180 for each motor
@@ -276,16 +279,17 @@ while True:
 
     # Do face detection to search for faces from these captures frames
     # cv2.CascadeClassifier.detectMultiScale(image[, scaleFactor[, minNeighbors[, flags[, minSize[, maxSize]]]]]) 
-    faces = faceCascade.detectMultiScale(frame, 1.1, 3, 0, (10, 10))
-    # print(faces.size)
+    faces = faceCascade.detectMultiScale(frame, 1.1, 5 , 0, (10, 10))
+    
+    
     if len(faces) == 0:
         NoFaceCount = NoFaceCount + 1
-        print("No Face", NoFaceCount)
+        # print("No Face", NoFaceCount)
         if NoFaceCount > 80:
             Move_mirror_high(0, MaxArmHeight,   0,  0, 0.5)
     else:
         NoFaceCount = 0
-        print("Face Detected")
+        # print("Face Detected")
     # Slower method (this gets used only if the slower HAAR method was uncommented above. 
     '''faces = faceCascade.detectMultiScale(
         gray,
@@ -312,61 +316,31 @@ while True:
         
         # Converts pixels to degrees, the usb camera has a 120 degrees angle
         # proprtionally devided to the 400 pixels of the image width
-        ErrorDegBeta = int (1 * z * 120/400)
-        ErrorDegGama = int (1 * t *  60/200)
+        ErrorDegBeta = (1 * z * 120/400)
+        ErrorDegGama = (1 * t *  60/200)
         
         DeltaBetaPID = pid1(ErrorDegBeta)
-        
-        if -CenterRange < z < CenterRange and -CenterRange < t < CenterRange:
-            Direction = 0
-            deltaBeta = 0
-            deltaGama = 0  
-        if -CenterRange < z < CenterRange and CenterRange <= t :
-            Direction = 1
-            deltaBeta = 0              
-            deltaGama = AngleIncrement
-        if CenterRange <= z and CenterRange <= t :
-            Direction = 2
-            deltaBeta = AngleIncrement
-            deltaGama = AngleIncrement
-        if CenterRange <= z and -CenterRange < t < CenterRange :
-            Direction = 3
-            deltaBeta = AngleIncrement
-            deltaGama = 0 
-        if CenterRange <= z and t <= -CenterRange :
-            Direction = 4
-            deltaBeta = AngleIncrement
-            deltaGama = -AngleIncrement
-        if -CenterRange < z < CenterRange and t <= -CenterRange :
-            Direction = 5
-            deltaBeta = 0
-            deltaGama = -AngleIncrement
-        if z <= -CenterRange and t <= -CenterRange :
-            Direction = 6
-            deltaBeta = -AngleIncrement
-            deltaGama = -AngleIncrement
-        if z <= -CenterRange and -CenterRange < t < CenterRange :
-            Direction = 7
-            deltaBeta = -AngleIncrement
-            deltaGama = 0
-        if z <= -CenterRange and CenterRange <= t :
-            Direction = 8
-            deltaBeta = -AngleIncrement
-            deltaGama = AngleIncrement
+        DeltaGamaPID = pid2(ErrorDegGama)
             
         # the function moving the motors work in absolute positions, converting relative to absolue here
-        AbsPositionBeta = ActualPositionBeta - deltaBeta; 
-        AbsPositionGama = ActualPositionGama - deltaGama;
+#         AbsPositionBeta = ActualPositionBeta - deltaBeta; 
+#         AbsPositionGama = ActualPositionGama - deltaGama;
+        
+        AbsPositionBeta = ActualPositionBeta - DeltaBetaPID; 
+        AbsPositionGama = ActualPositionGama - DeltaGamaPID;
+        print(DeltaBetaPID,AbsPositionBeta)
+        
         
         # Call the function that will move the motors
         # Move_mirror_high(0, MaxArmHeight,   - AbsPositionBeta,  -AbsPositionGama, 0.01)
+        # Direct_Move_mirror_high(0, MaxArmHeight, DeltaBetaPID, 0)
         Direct_Move_mirror_high(0, MaxArmHeight, DeltaBetaPID, 0)
         
         # setting the new Actual position
         ActualPositionBeta = AbsPositionBeta;
         ActualPositionGama = AbsPositionGama;
-        
-        time.sleep(0.05)                    #delay one second
+        # DeltaBetaPID = 0
+        # time.sleep(0.1)                    #delay one second
 
         break
     
